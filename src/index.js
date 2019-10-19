@@ -38,6 +38,7 @@ const typeDefs = gql`
 
     type Query {
         allBooks: [Book]
+        allWriters: [Writer]
     }
 
     type Mutation {
@@ -88,6 +89,9 @@ const resolver = {
     Query: {
         allBooks() {
             return Book.findAll({ include: [Writer] })
+        },
+        allWriters() {
+            return Writer.findAll({ include: [Book] })
         }
     },
     Mutation: {
@@ -140,6 +144,11 @@ const resolver = {
             await writer.destroy()
             return true
         },
+    },
+    Writer: {
+        initials(parent, body, context, info) {
+            return parent.firstname[0] + '. ' + parent.lastname[0] + '.'
+        }
     }
 }
 
