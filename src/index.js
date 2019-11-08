@@ -59,12 +59,12 @@ const typeDefs = gql`
 
     type Mutation {
         createBook(data: CreateBookInput): Book @auth(role: WRITER)
-        updateBook(id: ID! data: UpdateBookInput): Book
-        deleteBook(id: ID!): Boolean
+        updateBook(id: ID! data: UpdateBookInput): Book 
+        deleteBook(id: ID!): Boolean 
 
         createWriter(data: CreateWriterInput): Writer
-        updateWriter(id: ID! data: UpdateWriterInput): Writer
-        deleteWriter(id: ID!): Boolean
+        updateWriter(id: ID! data: UpdateWriterInput): Writer 
+        deleteWriter(id: ID!): Boolean 
 
         signin(
             email: String!
@@ -233,7 +233,10 @@ const server = new ApolloServer({
     schemaDirectives: {
         auth: AuthDirective
     },
-    context({ req }) {
+    context({ req, connection }) {
+        if (connection) {
+            return connection.context
+        }
         return {
             headers: req.headers
         }
