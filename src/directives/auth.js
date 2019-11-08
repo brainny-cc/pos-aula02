@@ -2,6 +2,7 @@ const { SchemaDirectiveVisitor, AuthenticationError } = require('apollo-server')
 const { defaultFieldResolver } = require('graphql')
 const jwt = require('jsonwebtoken')
 const Writer = require('../models/writer')
+
 class AuthDirective extends SchemaDirectiveVisitor {
     visitObject(type) {
         this.ensureFieldsWrapped(type)
@@ -32,10 +33,13 @@ class AuthDirective extends SchemaDirectiveVisitor {
                 }
 
                 const context = args[2]
-                const token = context.headers.authorization
-                console.log(token)
-                const jwtData = jwt.decode(token.replace('Bearer ', ''))
 
+                const token = context.headers.authorization
+                if (!token) {
+                    throw new AuthenticationError('Você não está autorizado')
+
+                }
+                const jwtData = jwt.decode(token.replace('Bearer ', ''))
                 const { id } = jwtData
 
                 const writer = await Writer.findOne({
@@ -45,7 +49,6 @@ class AuthDirective extends SchemaDirectiveVisitor {
                 if (writer.role !== requiredRole) {
                     throw new AuthenticationError('Você não tem permissão')
                 }
-
                 return resolve.apply(this, args)
             }
         })
