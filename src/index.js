@@ -79,6 +79,7 @@ const typeDefs = gql`
 
     type Subscription {
         onCreatedWriter: Writer
+        onCreatedBook: Book
     }
 
     input CreateWriterInput {
@@ -110,7 +111,13 @@ const typeDefs = gql`
         ISBN: Int!
         publicationDate: String!
         genre: Genres
-        writer: CreateWriterInput
+        writer: CreateBookWriterInput
+    }
+
+    input CreateBookWriterInput {
+        firstname: String
+        lastname: String
+        id: ID
     }
 
     input UpdateBookInput {
@@ -140,10 +147,18 @@ const resolver = {
                 body.data.writer = null
                 const book = await Book.create(body.data)
                 await book.setWriter(createdWriter.get('id'))
-                return book.reload({ include: [Writer] })
+                const newBook = await book.reload({ include: [Writer] })
+                pubSub.publish('createdBook', {
+                    onCreatedBook: newBook
+                })
+                return newBook
 
             } else {
-                return Book.create(body.data, { include: [Writer] })
+                const book = await Book.create(body.data, { include: [Writer] })
+                pubSub.publish('createdBook', {
+                    onCreatedBook: book
+                })
+                return book
             }
         },
         async updateBook(parent, body, context, info) {
@@ -218,6 +233,9 @@ const resolver = {
     Subscription: {
         onCreatedWriter: {
             subscribe: () => pubSub.asyncIterator('createdWriter')
+        },
+        onCreatedBook: {
+            subscribe: () => pubSub.asyncIterator('createdBook')
         }
     },
     Writer: {
